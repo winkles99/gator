@@ -21,29 +21,25 @@ func main() {
 		log.Fatalf("error reading config: %v", err)
 	}
 
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		log.Fatal("DATABASE_URL environment variable is required")
-	}
-
-	db, err := sql.Open("postgres", dbURL)
+	db, err := sql.Open("postgres", cfg.DBURL)
 	if err != nil {
-		log.Fatalf("error connecting to database: %v", err)
+		log.Fatalf("error connecting to db: %v", err)
 	}
 	defer db.Close()
-
 	dbQueries := database.New(db)
+
 	programState := &state{
-		cfg: &cfg,
 		db:  dbQueries,
+		cfg: &cfg,
 	}
+
 	cmds := commands{
 		registeredCommands: make(map[string]func(*state, command) error),
 	}
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
-	cmds.register("reset", resetCommand)
-	cmds.register("users", usersCommand)
+	cmds.register("reset", handlerReset)
+	cmds.register("users", handlerListUsers)
 
 	if len(os.Args) < 2 {
 		log.Fatal("Usage: cli <command> [args...]")
